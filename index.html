@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b5cab">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Regatta">
+  <title>Raingutter Regatta</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <header class="app-header no-print">
+      <div>
+        <p class="eyebrow">Double-Elimination Race Tracker</p>
+        <h1 id="headerTitle">Raingutter Regatta</h1>
+      </div>
+      <button id="installButton" class="button ghost compact hidden" type="button">Install</button>
+    </header>
+
+    <main>
+      <section id="setupView" class="view active">
+        <div class="panel hero-panel">
+          <h2>Start a Tournament</h2>
+          <p class="muted">Enter racers by boat number, name, or both. Rank/den is optional text only.</p>
+
+          <label class="field">
+            <span>Event title</span>
+            <input id="eventTitleInput" type="text" value="Raingutter Regatta" autocomplete="off">
+          </label>
+
+          <div class="form-grid">
+            <label class="field">
+              <span>Boat #</span>
+              <input id="boatInput" type="text" inputmode="text" autocomplete="off" placeholder="12">
+            </label>
+            <label class="field wide">
+              <span>Racer name</span>
+              <input id="nameInput" type="text" autocomplete="off" placeholder="Ethan Smith">
+            </label>
+            <label class="field">
+              <span>Rank / den <small>(optional)</small></span>
+              <select id="rankInput">
+                <option value="">None</option>
+                <option>Lion</option>
+                <option>Tiger</option>
+                <option>Wolf</option>
+                <option>Bear</option>
+                <option>Webelos</option>
+                <option>Arrow of Light</option>
+              </select>
+            </label>
+          </div>
+
+          <button id="addRacerButton" class="button primary full" type="button">Add Racer</button>
+        </div>
+
+        <div class="panel">
+          <div class="section-heading">
+            <div>
+              <h2>Racers</h2>
+              <p id="racerCount" class="muted">0 racers</p>
+            </div>
+            <button id="clearRacersButton" class="button ghost compact" type="button">Clear</button>
+          </div>
+          <div id="racerList" class="racer-list empty-state">No racers entered yet.</div>
+        </div>
+
+        <div class="stack-actions">
+          <button id="startTournamentButton" class="button primary xl" type="button">Start Tournament</button>
+          <button id="resumeAutosaveButton" class="button secondary hidden" type="button">Resume Autosaved Tournament</button>
+          <button id="loadSetupButton" class="button ghost" type="button">Load Tournament File</button>
+        </div>
+      </section>
+
+      <section id="tournamentView" class="view">
+        <nav class="tabs no-print" aria-label="Tournament sections">
+          <button class="tab active" data-tab="race" type="button">Race Day</button>
+          <button class="tab" data-tab="bracket" type="button">Bracket</button>
+          <button class="tab" data-tab="results" type="button">Results</button>
+        </nav>
+
+        <section id="racePanel" class="tab-panel active">
+          <div class="race-status-row">
+            <div>
+              <p id="raceNumberLabel" class="eyebrow">Race 1</p>
+              <h2 id="bracketLabel">Winner's Bracket</h2>
+            </div>
+            <span id="saveStatus" class="save-status">Autosaved</span>
+          </div>
+
+          <div id="championCard" class="champion-card hidden" aria-live="polite"></div>
+
+          <div id="raceCard" class="race-card">
+            <p class="center muted">Tap the winner.</p>
+            <div class="versus-grid">
+              <button id="racer1Button" class="racer-button" type="button"></button>
+              <div class="versus">VS</div>
+              <button id="racer2Button" class="racer-button" type="button"></button>
+            </div>
+          </div>
+
+          <div class="panel on-deck-panel">
+            <p class="eyebrow">On Deck</p>
+            <p id="onDeckText" class="on-deck-text">TBD — waiting for race results</p>
+          </div>
+
+          <div class="quick-actions no-print">
+            <button id="undoButton" class="button secondary" type="button">Undo Last Result</button>
+            <button id="saveButton" class="button ghost" type="button">Save File</button>
+            <button id="loadButton" class="button ghost" type="button">Load File</button>
+            <button id="newTournamentButton" class="button danger ghost" type="button">New Tournament</button>
+          </div>
+
+          <details class="panel standings-panel">
+            <summary>Live Standings</summary>
+            <div id="liveStandings"></div>
+          </details>
+        </section>
+
+        <section id="bracketPanel" class="tab-panel">
+          <div class="section-heading">
+            <div>
+              <h2>Live Bracket</h2>
+              <p class="muted">Completed, current, and already-scheduled races are shown below.</p>
+            </div>
+          </div>
+          <div id="bracketView" class="bracket-view"></div>
+        </section>
+
+        <section id="resultsPanel" class="tab-panel print-target">
+          <div class="results-header">
+            <p class="eyebrow">Tournament Results</p>
+            <h2 id="resultsTitle">Raingutter Regatta</h2>
+            <p id="resultsSubtitle" class="muted"></p>
+          </div>
+
+          <div id="resultsSummary" class="results-summary"></div>
+
+          <section class="results-section">
+            <h3>Standings</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Place</th><th>Boat</th><th>Racer</th><th>Rank/Den</th><th>Losses</th></tr>
+                </thead>
+                <tbody id="resultsStandingsBody"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="results-section">
+            <h3>Race Log</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Race</th><th>Bracket</th><th>Matchup</th><th>Winner</th></tr>
+                </thead>
+                <tbody id="raceLogBody"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <div class="quick-actions no-print">
+            <button id="printButton" class="button primary" type="button">Print Results</button>
+            <button id="shareButton" class="button secondary" type="button">Share Results</button>
+            <button id="downloadResultsButton" class="button ghost" type="button">Download Results HTML</button>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <footer class="app-footer no-print">
+      <span id="offlineStatus">Ready</span>
+    </footer>
+  </div>
+
+  <input id="loadFileInput" type="file" accept=".rrt,.json,application/json" hidden>
+
+  <dialog id="installDialog">
+    <form method="dialog" class="dialog-card">
+      <h2>Install on Your Device</h2>
+      <div id="installInstructions"></div>
+      <button class="button primary full" value="close">Got It</button>
+    </form>
+  </dialog>
+
+  <script src="engine.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
