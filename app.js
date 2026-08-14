@@ -1,6 +1,8 @@
 (function () {
   'use strict';
 
+  const APP_VERSION = '1.2.0';
+  const APP_URL = 'https://icebreaker1979.github.io/raingutter-regatta/';
   const SAVE_FORMAT = 'raingutter-regatta-mobile';
   const SAVE_VERSION = 1;
   const AUTOSAVE_KEY = 'raingutter-regatta-mobile-autosave-v1';
@@ -8,6 +10,8 @@
 
   let state = freshState();
   let deferredInstallPrompt = null;
+  let waitingServiceWorker = null;
+  let bracketScale = 1;
 
   function freshState() {
     return {
@@ -256,7 +260,8 @@
         <p class="eyebrow">Champion</p>
         <div class="champion-name">${escapeHtml(displayRacerById(champion))}</div>
         ${meta ? `<p class="muted">${escapeHtml(meta)}</p>` : ''}
-        <p>Congratulations!</p>`;
+        <p>Congratulations!</p>
+        <button class="button primary champion-new-button no-print" type="button">Start New Tournament</button>`;
       $('onDeckText').textContent = 'Tournament complete';
     } else if (current) {
       renderRacerButton($('racer1Button'), current.p1);
@@ -291,7 +296,7 @@
     const stateClass = item.status === 'current' ? ' current' : item.status === 'upcoming' ? ' upcoming' : '';
     const label = item.status === 'upcoming' ? `Upcoming • Round ${item.round}` : `Race ${item.race} • Round ${item.round}`;
     return `
-      <article class="match-node${stateClass}">
+      <article class="match-node${stateClass}" data-match-id="${item.id || item.matchId || ''}" data-match-status="${item.status}">
         <div class="match-title">${escapeHtml(label)}</div>
         <div class="match-racer${p1Winner ? ' winner' : ''}">${escapeHtml(displayRacerById(item.p1))}</div>
         <div class="match-divider"></div>
@@ -329,6 +334,48 @@
           </div>
         </section>`;
     }).join('');
+    applyBracketZoom();
+  }
+
+
+  function applyBracketZoom() {
+    const view = $('bracketView');
+    if (!view) return;
+    const scale = Math.max(0.65, Math.min(1.35, bracketScale));
+    bracketScale = scale;
+    view.style.setProperty('--match-width', `${Math.round(210 * scale)}px`);
+    view.style.setProperty('--match-min-height', `${Math.round(142 * scale)}px`);
+    view.style.setProperty('--match-padding', `${Math.max(8, Math.round(11 * scale))}px`);
+    view.style.setProperty('--match-title-size', `${Math.max(10, 12.5 * scale)}px`);
+    view.style.setProperty('--match-racer-size', `${Math.max(12, 16 * scale)}px`);
+    view.style.setProperty('--arrow-width', `${Math.max(24, Math.round(38 * scale))}px`);
+    $('bracketZoomLabel').textContent = `${Math.round(scale * 100)}%`;
+  }
+
+  function zoomBracket(delta) {
+    bracketScale = Math.round((bracketScale + delta) * 100) / 100;
+    applyBracketZoom();
+  }
+
+  function resetBracketZoom() {
+    bracketScale = 1;
+    applyBracketZoom();
+  }
+
+  function fitBracketToPhone() {
+    const width = Math.max(280, $('bracketPanel').clientWidth || window.innerWidth || 360);
+    // Aim to show roughly two match cards at once on phones without making text unreadable.
+    bracketScale = Math.max(0.68, Math.min(1.05, (width - 54) / 460));
+    applyBracketZoom();
+  }
+
+  function jumpToCurrentRace() {
+    const current = $('bracketView').querySelector('.match-node.current');
+    if (!current) {
+      alert(state.engine?.champion ? 'The tournament is complete.' : 'The current race is not visible in the bracket yet.');
+      return;
+    }
+    current.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   }
 
   function calculatePlacements() {
@@ -365,17 +412,25 @@
     if (!state.engine) return;
     const complete = Boolean(state.engine.champion);
     const standings = calculatePlacements();
+    const top = standings.filter((r) => r.place).slice(0, 3);
     const championName = state.engine.champion ? displayRacerById(state.engine.champion) : 'Not decided yet';
 
     $('resultsTitle').textContent = state.eventTitle;
+    $('resultsStatusBadge').textContent = complete ? 'Complete' : 'In Progress';
+    $('resultsStatusBadge').classList.toggle('complete', complete);
     $('resultsSubtitle').textContent = complete
-      ? `Completed ${formatDate(state.updatedAt)}`
-      : `Tournament in progress • ${state.resultLog.length} completed race${state.resultLog.length === 1 ? '' : 's'}`;
+      ? `Completed ${formatDate(state.updatedAt)} • ${state.racers.length} racers • ${state.resultLog.length} races`
+      : `Tournament in progress • ${state.resultLog.length} completed race${state.resultLog.length === 1 ? '' : 's'} • ${state.racers.length} racers`;
+    $('resultsGenerated').textContent = `Report generated ${new Date().toLocaleString()} • App v${APP_VERSION}`;
 
-    $('resultsSummary').innerHTML = `
-      <div class="summary-card"><span class="muted">Champion</span><strong>${escapeHtml(championName)}</strong></div>
-      <div class="summary-card"><span class="muted">Racers</span><strong>${state.racers.length}</strong></div>
-      <div class="summary-card"><span class="muted">Completed Races</span><strong>${state.resultLog.length}</strong></div>`;
+    const podiumCards = complete && top.length
+      ? top.map((r) => {
+          const labels = { 1: 'Champion', 2: 'Runner-Up', 3: 'Third Place' };
+          return `<div class="summary-card podium"><span class="place-label">${labels[r.place] || `Place ${r.place}`}</span><strong>${escapeHtml(displayRacerById(r.uid))}</strong>${r.rank ? `<span class="muted">${escapeHtml(r.rank)}</span>` : ''}</div>`;
+        }).join('')
+      : `<div class="summary-card"><span class="muted">Champion</span><strong>${escapeHtml(championName)}</strong></div>`;
+
+    $('resultsSummary').innerHTML = `${podiumCards}<div class="summary-card"><span class="muted">Completed Races</span><strong>${state.resultLog.length}</strong></div>`;
 
     $('resultsStandingsBody').innerHTML = standings.map((r) => `
       <tr>
@@ -535,16 +590,53 @@
     reader.readAsText(file);
   }
 
-  function newTournament() {
-    if (!confirm('Start a new tournament? The current tournament will remain in autosave until the new tournament begins.')) return;
+  function clearAutosave() {
+    try {
+      localStorage.removeItem(AUTOSAVE_KEY);
+    } catch {
+      // Storage may be unavailable in private/restricted browsing. Reset can still continue.
+    }
+  }
+
+  function resetToNewTournament() {
+    clearAutosave();
     state = freshState();
+    bracketScale = 1;
     $('eventTitleInput').value = state.eventTitle;
+    $('newTournamentDialog').close();
     showSetup();
+  }
+
+  function requestNewTournament() {
+    if (!state.engine) {
+      resetToNewTournament();
+      return;
+    }
+    const completed = state.resultLog.length;
+    const status = state.engine.champion ? 'This tournament is complete.' : 'This tournament is still in progress.';
+    $('newTournamentWarning').textContent = `${status} It has ${completed} completed race${completed === 1 ? '' : 's'}. Save a backup first if you may need these results later.`;
+    $('newTournamentDialog').showModal();
+  }
+
+  function saveThenStartNew() {
+    saveTournamentFile();
+    // Let the browser begin the file download before resetting the in-memory tournament.
+    setTimeout(resetToNewTournament, 150);
   }
 
   function resultsPlainText() {
     const standings = calculatePlacements();
-    const lines = [state.eventTitle, '', `Champion: ${state.engine?.champion ? displayRacerById(state.engine.champion) : 'Not decided yet'}`, '', 'Standings:'];
+    const lines = [
+      state.eventTitle,
+      'Tournament Results',
+      '',
+      `Champion: ${state.engine?.champion ? displayRacerById(state.engine.champion) : 'Not decided yet'}`,
+      `Racers: ${state.racers.length}`,
+      `Completed races: ${state.resultLog.length}`,
+      `Generated: ${new Date().toLocaleString()}`,
+      '',
+      'Standings:',
+    ];
     standings.forEach((r) => {
       lines.push(`${r.place || '—'}. ${displayRacerById(r.uid)}${r.rank ? ` (${r.rank})` : ''} — ${r.losses} loss${r.losses === 1 ? '' : 'es'}`);
     });
@@ -552,14 +644,23 @@
     state.resultLog.forEach((r) => {
       lines.push(`Race ${r.race}: ${displayRacerById(r.winner)} defeated ${displayRacerById(r.loser)} — ${r.bracket}`);
     });
+    lines.push('', `Created with Raingutter Regatta Mobile v${APP_VERSION}`);
     return lines.join('\n');
   }
 
   function resultsHtml() {
     const standings = calculatePlacements();
+    const complete = Boolean(state.engine?.champion);
+    const champion = state.engine?.champion ? displayRacerById(state.engine.champion) : 'Not decided yet';
+    const runnerUp = standings.find((r) => r.place === 2);
+    const third = standings.find((r) => r.place === 3);
     const rows = standings.map((r) => `<tr><td>${r.place || '—'}</td><td>${r.boatNumber ? `#${escapeHtml(r.boatNumber)}` : '—'}</td><td>${escapeHtml(r.name || displayRacerById(r.uid))}</td><td>${escapeHtml(r.rank || '—')}</td><td>${r.losses}</td></tr>`).join('');
     const races = state.resultLog.map((r) => `<tr><td>${r.race}</td><td>${escapeHtml(r.bracket)}</td><td>${escapeHtml(displayRacerById(r.p1))} vs ${escapeHtml(displayRacerById(r.p2))}</td><td>${escapeHtml(displayRacerById(r.winner))}</td></tr>`).join('');
-    return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(state.eventTitle)} Results</title><style>body{font-family:Arial,sans-serif;margin:32px;color:#111}h1{margin-bottom:4px}.muted{color:#555}table{width:100%;border-collapse:collapse;margin:12px 0 28px}th,td{border:1px solid #aaa;padding:8px;text-align:left}th{background:#eee}@media print{body{margin:.4in}}</style></head><body><h1>${escapeHtml(state.eventTitle)}</h1><p class="muted">Tournament Results</p><p><strong>Champion:</strong> ${escapeHtml(state.engine?.champion ? displayRacerById(state.engine.champion) : 'Not decided yet')}</p><h2>Standings</h2><table><thead><tr><th>Place</th><th>Boat</th><th>Racer</th><th>Rank/Den</th><th>Losses</th></tr></thead><tbody>${rows}</tbody></table><h2>Race Log</h2><table><thead><tr><th>Race</th><th>Bracket</th><th>Matchup</th><th>Winner</th></tr></thead><tbody>${races || '<tr><td colspan="4">No completed races.</td></tr>'}</tbody></table></body></html>`;
+    const generated = new Date().toLocaleString();
+    const completion = complete ? `Completed ${escapeHtml(formatDate(state.updatedAt))}` : 'Tournament in progress';
+    return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(state.eventTitle)} Results</title><style>
+      *{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;margin:32px;color:#111;line-height:1.35}h1{margin:0 0 3px;font-size:26px}.kicker{text-transform:uppercase;letter-spacing:.08em;font-size:11px;font-weight:700;color:#555}.meta{color:#555;margin:0 0 18px}.podium{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:18px 0}.card{border:1px solid #aaa;border-radius:8px;padding:10px}.card span{display:block;color:#555;font-size:11px;text-transform:uppercase;letter-spacing:.04em}.card strong{display:block;margin-top:4px}table{width:100%;border-collapse:collapse;margin:10px 0 26px}th,td{border:1px solid #aaa;padding:7px;text-align:left;vertical-align:top}th{background:#eee;font-size:11px;text-transform:uppercase;letter-spacing:.04em}.race-log{page-break-before:always;break-before:page}.footer{margin-top:24px;color:#666;font-size:10px}.print-button{margin-bottom:18px;padding:9px 14px;border:1px solid #777;background:#fff;border-radius:6px;font-weight:700}@media(max-width:600px){body{margin:16px}.podium{grid-template-columns:1fr}}@media print{@page{margin:.45in}body{margin:0}.print-button{display:none}.race-log{page-break-before:always}table{font-size:9pt}th,td{padding:5px}}
+    </style></head><body><button class="print-button" onclick="window.print()">Print / Save PDF</button><div class="kicker">Tournament Results</div><h1>${escapeHtml(state.eventTitle)}</h1><p class="meta">${completion} • ${state.racers.length} racers • ${state.resultLog.length} completed races • Report generated ${escapeHtml(generated)}</p><div class="podium"><div class="card"><span>Champion</span><strong>${escapeHtml(champion)}</strong></div><div class="card"><span>Runner-Up</span><strong>${runnerUp ? escapeHtml(displayRacerById(runnerUp.uid)) : '—'}</strong></div><div class="card"><span>Third Place</span><strong>${third ? escapeHtml(displayRacerById(third.uid)) : '—'}</strong></div></div><h2>Standings</h2><table><thead><tr><th>Place</th><th>Boat</th><th>Racer</th><th>Rank/Den</th><th>Losses</th></tr></thead><tbody>${rows}</tbody></table><section class="race-log"><h2>Race Log</h2><table><thead><tr><th>Race</th><th>Bracket</th><th>Matchup</th><th>Winner</th></tr></thead><tbody>${races || '<tr><td colspan="4">No completed races.</td></tr>'}</tbody></table></section><div class="footer">Created with Raingutter Regatta Mobile v${APP_VERSION}</div></body></html>`;
   }
 
   async function shareResults() {
@@ -603,6 +704,46 @@
     }
   }
 
+
+  function currentAppUrl() {
+    if (location.protocol === 'http:' || location.protocol === 'https:') {
+      return `${location.origin}${location.pathname}`;
+    }
+    return APP_URL;
+  }
+
+  function openAbout() {
+    $('aboutAppUrl').textContent = currentAppUrl();
+    $('aboutDialog').showModal();
+  }
+
+  async function shareAppLink() {
+    const url = currentAppUrl();
+    const payload = { title: 'Raingutter Regatta Mobile', text: 'Open the Raingutter Regatta mobile race tracker.', url };
+    if (navigator.share) {
+      try {
+        await navigator.share(payload);
+        return;
+      } catch (error) {
+        if (error.name === 'AbortError') return;
+      }
+    }
+    window.prompt('Copy this app link:', url);
+  }
+
+  function showUpdateBanner(worker) {
+    waitingServiceWorker = worker || waitingServiceWorker;
+    $('updateBanner').classList.remove('hidden');
+  }
+
+  function applyPendingUpdate() {
+    if (waitingServiceWorker) {
+      waitingServiceWorker.postMessage({ type: 'SKIP_WAITING' });
+    } else {
+      location.reload();
+    }
+  }
+
   function wireEvents() {
     $('addRacerButton').addEventListener('click', addRacer);
     $('boatInput').addEventListener('keydown', (event) => { if (event.key === 'Enter') addRacer(); });
@@ -623,7 +764,8 @@
     $('undoButton').addEventListener('click', undoLastResult);
     $('saveButton').addEventListener('click', saveTournamentFile);
     $('loadButton').addEventListener('click', loadTournamentFile);
-    $('newTournamentButton').addEventListener('click', newTournament);
+    $('newTournamentButton').addEventListener('click', requestNewTournament);
+    $('resultsNewTournamentButton').addEventListener('click', requestNewTournament);
     $('printButton').addEventListener('click', () => window.print());
     $('shareButton').addEventListener('click', shareResults);
     $('downloadResultsButton').addEventListener('click', () => {
@@ -631,6 +773,25 @@
     });
     $('loadFileInput').addEventListener('change', () => handleLoadedFile($('loadFileInput').files[0]));
     $('installButton').addEventListener('click', installApp);
+    $('bracketZoomOutButton').addEventListener('click', () => zoomBracket(-0.1));
+    $('bracketFitButton').addEventListener('click', fitBracketToPhone);
+    $('bracketResetButton').addEventListener('click', resetBracketZoom);
+    $('bracketZoomInButton').addEventListener('click', () => zoomBracket(0.1));
+    $('bracketCurrentButton').addEventListener('click', jumpToCurrentRace);
+
+    $('saveThenNewButton').addEventListener('click', saveThenStartNew);
+    $('discardThenNewButton').addEventListener('click', resetToNewTournament);
+    $('cancelNewTournamentButton').addEventListener('click', () => $('newTournamentDialog').close());
+
+    $('aboutButton').addEventListener('click', openAbout);
+    $('shareAppButton').addEventListener('click', shareAppLink);
+    $('closeAboutButton').addEventListener('click', () => $('aboutDialog').close());
+    $('reloadUpdateButton').addEventListener('click', applyPendingUpdate);
+
+    $('championCard').addEventListener('click', (event) => {
+      if (event.target.closest('.champion-new-button')) requestNewTournament();
+    });
+
 
     document.querySelectorAll('.tab').forEach((tab) => {
       tab.addEventListener('click', () => activateTab(tab.dataset.tab));
@@ -667,8 +828,32 @@
     if (!isStandalone) $('installButton').classList.remove('hidden');
 
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+      let reloadingForUpdate = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (reloadingForUpdate) return;
+        reloadingForUpdate = true;
+        location.reload();
+      });
+
       navigator.serviceWorker.register('./service-worker.js')
-        .then(() => { $('offlineStatus').textContent = 'Offline-ready'; })
+        .then((registration) => {
+          $('offlineStatus').textContent = 'Offline-ready';
+
+          if (registration.waiting) showUpdateBanner(registration.waiting);
+          registration.addEventListener('updatefound', () => {
+            const worker = registration.installing;
+            if (!worker) return;
+            worker.addEventListener('statechange', () => {
+              if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+                showUpdateBanner(worker);
+              }
+            });
+          });
+
+          // GitHub Pages is static, so checking once per app launch is inexpensive and
+          // helps installed PWAs discover updates without requiring the user to clear cache.
+          registration.update().catch(() => {});
+        })
         .catch(() => { $('offlineStatus').textContent = 'Online mode'; });
     } else if (location.protocol === 'file:') {
       $('offlineStatus').textContent = 'Local preview — host over HTTPS to install';

@@ -242,24 +242,25 @@ input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px 
 
 .bracket-view { display: grid; gap: 22px; padding: 8px 0 22px; }
 .bracket-lane h3 { margin-bottom: 8px; }
-.bracket-scroller { overflow-x: auto; padding: 4px 1px 10px; -webkit-overflow-scrolling: touch; }
+.bracket-scroller { overflow-x: auto; padding: 4px 1px 10px; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; scroll-padding-inline: 12px; }
 .bracket-track { display: flex; align-items: stretch; gap: 0; min-width: max-content; }
 .match-node {
-  width: 210px;
-  min-height: 142px;
+  width: var(--match-width, 210px);
+  min-height: var(--match-min-height, 142px);
   border: 1px solid var(--border);
   border-radius: 15px;
   background: var(--panel);
-  padding: 11px;
+  padding: var(--match-padding, 11px);
   box-shadow: var(--shadow);
+  scroll-snap-align: center;
 }
 .match-node.current { border: 2px solid var(--primary); background: var(--panel-soft); }
 .match-node.upcoming { opacity: .72; border-style: dashed; }
-.match-title { font-size: .78rem; color: var(--muted); font-weight: 800; margin-bottom: 8px; }
-.match-racer { padding: 7px 6px; border-radius: 8px; font-weight: 700; }
+.match-title { font-size: var(--match-title-size, .78rem); color: var(--muted); font-weight: 800; margin-bottom: 8px; }
+.match-racer { padding: 7px 6px; border-radius: 8px; font-weight: 700; font-size: var(--match-racer-size, 1rem); }
 .match-racer.winner { background: var(--panel-soft); color: var(--primary); }
 .match-divider { height: 1px; background: var(--border); margin: 3px 0; }
-.match-arrow { width: 38px; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 1.5rem; flex: 0 0 38px; }
+.match-arrow { width: var(--arrow-width, 38px); display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 1.5rem; flex: 0 0 var(--arrow-width, 38px); }
 
 .results-header { padding: 18px 2px 4px; }
 .results-header h2 { margin-bottom: 4px; }
@@ -303,4 +304,141 @@ dialog::backdrop { background: rgba(0,0,0,.5); }
   .muted, .eyebrow { color: #444 !important; }
   .results-summary { grid-template-columns: repeat(3, 1fr); }
   .summary-card { background: white !important; border-color: #999; }
+}
+
+/* Mobile v1.2 polish */
+.update-banner {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 -16px;
+  padding: 10px 16px;
+  background: var(--panel-soft);
+  border-bottom: 1px solid var(--primary);
+  font-weight: 800;
+}
+
+.bracket-heading { margin-top: 16px; }
+.bracket-toolbar {
+  display: grid;
+  grid-template-columns: 48px 1fr 1fr 48px;
+  gap: 7px;
+  margin: 10px 0 4px;
+}
+.bracket-toolbar .button { min-width: 0; padding-left: 8px; padding-right: 8px; }
+.bracket-current-button { grid-column: 1 / -1; }
+
+.results-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.results-status-badge {
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: .78rem;
+  font-weight: 800;
+  color: var(--muted);
+}
+.results-status-badge.complete {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--panel-soft);
+}
+.results-generated { font-size: .82rem; margin-top: 4px; }
+.summary-card.podium strong { font-size: 1.25rem; }
+.summary-card .place-label { color: var(--primary); font-weight: 900; font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; }
+.results-help {
+  border: 1px solid var(--border);
+  background: var(--panel-soft);
+  border-radius: 13px;
+  padding: 11px 13px;
+  color: var(--muted);
+  font-size: .88rem;
+  margin: 14px 0;
+}
+
+.app-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.footer-link {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 2px 0;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.dialog-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 16px; }
+.dialog-actions.stacked { grid-template-columns: 1fr; }
+.about-card { max-width: 520px; }
+.about-status-grid { display: grid; gap: 8px; margin: 14px 0; }
+.about-status-grid > div {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+.about-status-grid span, .about-status-grid strong { display: block; }
+.about-status-grid strong { margin-top: 3px; overflow-wrap: anywhere; }
+.qr-panel {
+  display: grid;
+  grid-template-columns: 112px 1fr;
+  align-items: center;
+  gap: 14px;
+  margin: 16px 0;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+}
+.qr-panel img { width: 112px; height: 112px; border-radius: 8px; background: white; }
+.qr-panel p { margin: 5px 0 0; }
+
+.champion-card .button { margin-top: 12px; }
+
+@media (min-width: 680px) {
+  .bracket-toolbar { grid-template-columns: 48px 90px 90px 48px auto; justify-content: start; }
+  .bracket-current-button { grid-column: auto; }
+  .results-summary { grid-template-columns: repeat(4, 1fr); }
+  .about-status-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 520px) {
+  .results-table { min-width: 0; }
+  .results-table th:nth-child(4),
+  .results-table td:nth-child(4) { display: none; }
+  .results-table th, .results-table td { padding: 9px 7px; }
+  .results-title-row { align-items: center; }
+  .qr-panel { grid-template-columns: 92px 1fr; }
+  .qr-panel img { width: 92px; height: 92px; }
+}
+
+@media print {
+  @page { margin: 0.45in; }
+  #resultsPanel { font-size: 10.5pt; }
+  .results-header { border-bottom: 2px solid #222; margin-bottom: 12px; padding-bottom: 10px; }
+  .results-title-row { display: block; }
+  .results-status-badge { display: none !important; }
+  .results-generated { color: #555 !important; }
+  .results-summary { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .summary-card { padding: 8px; break-inside: avoid; }
+  .summary-card strong { font-size: 10.5pt; }
+  .results-section { margin: 15px 0; }
+  .race-log-section { break-before: page; page-break-before: always; }
+  table { font-size: 8.5pt; }
+  th, td { padding: 5px 6px; }
+  .results-table th:nth-child(4), .results-table td:nth-child(4) { display: table-cell; }
 }

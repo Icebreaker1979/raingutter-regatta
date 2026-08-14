@@ -1,12 +1,44 @@
-RAINGUTTER REGATTA MOBILE PWA
-=============================
+RAINGUTTER REGATTA MOBILE PWA v1.2.0
+====================================
 
-This is the graphics-free mobile/tablet version of the Raingutter Regatta double-elimination tracker.
-It is a Progressive Web App (PWA), so the same package can run on iPhone, iPad, Android, Chromebook,
-Mac, and desktop browsers.
+Graphics-free mobile/tablet version of the Raingutter Regatta double-elimination tracker.
+The same Progressive Web App (PWA) runs on iPhone, iPad, Android, Chromebook, Mac, and desktop browsers.
 
-FEATURES
---------
+HOSTED APP
+----------
+https://icebreaker1979.github.io/raingutter-regatta/
+
+WHAT'S NEW IN v1.2
+------------------
+- Safer New Tournament workflow
+  - Save Backup & Start New
+  - Start New Without Saving
+  - Cancel
+  - New Tournament button also appears after a champion is declared
+- Better phone bracket controls
+  - Zoom out / zoom in
+  - Fit-to-phone view
+  - Reset to 100%
+  - Jump directly to the current race
+  - Horizontal scroll snapping for touch screens
+- Cleaner results/printing
+  - Champion, Runner-Up, and Third Place summary after completion
+  - Improved standings and race-log layout
+  - Print / Save PDF wording and print styling
+  - Downloadable printable HTML report
+  - Race log starts on a separate printed page for cleaner reports
+- About/version screen
+  - Visible v1.2.0 version number
+  - Hosted app address
+  - QR code for sharing the app at an event
+  - Share App Link button on supported devices
+- Improved update behavior for future GitHub releases
+  - New service worker cache version
+  - Future updates can show an Update & Reload banner
+- Existing v1 autosaves and .rrt save files remain compatible
+
+CORE FEATURES
+-------------
 - Racer entry by boat number, name, or both
 - Optional rank/den text
 - Randomized starting order
@@ -16,23 +48,51 @@ FEATURES
 - Undo last result
 - Live standings
 - Live bracket view
-- Printable results
-- Share/download results
+- Printable/shareable results
 - Automatic local recovery after every completed race
 - Save Tournament (.rrt) and Load Tournament
 - Offline capability after the PWA is installed/cached
 - No Python required on iOS or Android
 
-IMPORTANT: INSTALLING ON A PHONE
---------------------------------
-A PWA must be served from a web address (normally HTTPS) to be installable and offline-capable.
-Opening index.html directly from a ZIP/file is useful for a quick preview, but it is not the final
-mobile installation method.
+UPDATING THE EXISTING GITHUB PAGES SITE
+---------------------------------------
+Your existing GitHub repository is:
+  icebreaker1979/raingutter-regatta
 
-To deploy it, upload the CONTENTS of this folder to any static HTTPS web host. The host does not need
-PHP, Python, a database, or any server-side code. It only needs to serve these files as-is.
+To update from v1 to v1.2:
+1. Open the repository on GitHub.
+2. Choose Add file -> Upload files.
+3. Upload/replace these files from this package:
+     index.html
+     app.js
+     engine.js
+     styles.css
+     manifest.webmanifest
+     service-worker.js
+     icons/icon-192.png
+     icons/icon-512.png
+     icons/app-link-qr.png
+4. Commit the changes to main.
+5. GitHub Pages will redeploy automatically.
 
-Then open that HTTPS address on the phone/tablet.
+IMPORTANT FOR ALREADY-INSTALLED PHONES
+--------------------------------------
+The existing v1 PWA may briefly continue using its cached files while the service worker updates.
+After GitHub finishes deploying:
+1. Open the installed Regatta app while online.
+2. Close it completely.
+3. Reopen it.
+4. Check About at the bottom of the app. It should say v1.2.0.
+
+If a future version is detected while v1.2 is running, the app is designed to show an
+"Update & Reload" banner.
+
+Your existing v1 autosaved tournament uses the same storage key and is intentionally preserved.
+Portable .rrt files saved by v1 remain loadable in v1.2.
+
+INSTALLING ON A PHONE
+---------------------
+The app must be served from an HTTPS web address for normal PWA install/offline behavior.
 
 IPHONE / IPAD
 -------------
@@ -45,53 +105,40 @@ IPHONE / IPAD
 ANDROID
 -------
 1. Open the hosted address in Chrome.
-2. Use the browser menu or the app's Install button.
+2. Use the Install button or browser menu.
 3. Choose Install app / Add to Home screen.
 4. Confirm.
 
-After the app has loaded and its files have been cached, it is designed to keep working without an
-internet connection. Tournament data is stored locally on that device unless you also save an .rrt file.
+After the app has cached its files, it is designed to continue working without internet access.
+Tournament data remains on the device unless you also save an .rrt file.
 
 LOCAL TEST ON WINDOWS
 ---------------------
-Python is NOT required on the phone, but because you already have Python on the Windows PC, you can
-preview the PWA through a local web server:
-
+Python is not required on the phone, but you can preview locally on Windows:
 1. Double-click Start_Local_Test_Server.bat
-2. Your browser should open http://localhost:8080
-3. To test from a phone on the SAME Wi-Fi, find the Windows PC's local IPv4 address with:
-
-   ipconfig
-
-4. On the phone, browse to:
-
-   http://YOUR-PC-IP:8080
-
-Example:
-   http://192.168.1.25:8080
-
-NOTE: Some PWA install/offline features require HTTPS and may not fully work when testing from a phone
-over a plain http:// local-network address. Localhost on the computer is treated differently by browsers.
+2. Open http://localhost:8080
 
 SAVE / LOAD
 -----------
-The app automatically stores the current tournament in the browser after every completed race.
-Use Save File to create a portable .rrt tournament file. Use Load File to restore one.
+The app automatically stores the current tournament in browser storage after every completed race.
+Use Save File to create a portable .rrt backup. Use Load File to restore one.
 
 If you clear browser/site data or uninstall the PWA, browser-only autosave data may be removed.
 Saving an .rrt file gives you a separate backup you can keep in Files/Downloads/cloud storage.
 
 FILES
 -----
-index.html                Main app page
-styles.css                Mobile-responsive layout and print styles
-engine.js                 Double-elimination tournament engine
-app.js                    App interface, saving, results, and PWA behavior
-manifest.webmanifest      Installable-app metadata
-service-worker.js         Offline file cache
-icons/                    Generic unbranded app icons
-Start_Local_Test_Server.bat  Easy Windows preview server
+index.html                  Main app page
+styles.css                  Mobile-responsive and print layout
+engine.js                   Double-elimination tournament engine
+app.js                      Interface, saving, results, update behavior
+manifest.webmanifest        Installable-app metadata
+service-worker.js           Offline cache and future update handling
+icons/icon-192.png          App icon
+icons/icon-512.png          App icon
+icons/app-link-qr.png       QR code for hosted GitHub Pages app
+Start_Local_Test_Server.bat Easy Windows preview server
 
 VERSION
 -------
-Mobile PWA v1
+Mobile PWA v1.2.0

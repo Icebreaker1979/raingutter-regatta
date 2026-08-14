@@ -14,6 +14,11 @@
 </head>
 <body>
   <div id="app" class="app-shell">
+    <div id="updateBanner" class="update-banner hidden no-print" role="status">
+      <span>A newer app version is ready.</span>
+      <button id="reloadUpdateButton" class="button compact primary" type="button">Update & Reload</button>
+    </div>
+
     <header class="app-header no-print">
       <div>
         <p class="eyebrow">Double-Elimination Race Tracker</p>
@@ -123,28 +128,43 @@
         </section>
 
         <section id="bracketPanel" class="tab-panel">
-          <div class="section-heading">
+          <div class="section-heading bracket-heading">
             <div>
               <h2>Live Bracket</h2>
-              <p class="muted">Completed, current, and already-scheduled races are shown below.</p>
+              <p class="muted">Swipe sideways through each bracket. Use the controls to make matches easier to read on a phone.</p>
             </div>
           </div>
+
+          <div class="bracket-toolbar no-print" aria-label="Bracket view controls">
+            <button id="bracketZoomOutButton" class="button ghost compact" type="button" aria-label="Zoom bracket out">−</button>
+            <button id="bracketFitButton" class="button ghost compact" type="button">Fit</button>
+            <button id="bracketResetButton" class="button ghost compact" type="button"><span id="bracketZoomLabel">100%</span></button>
+            <button id="bracketZoomInButton" class="button ghost compact" type="button" aria-label="Zoom bracket in">+</button>
+            <button id="bracketCurrentButton" class="button secondary compact bracket-current-button" type="button">Current Race</button>
+          </div>
+
           <div id="bracketView" class="bracket-view"></div>
         </section>
 
         <section id="resultsPanel" class="tab-panel print-target">
           <div class="results-header">
-            <p class="eyebrow">Tournament Results</p>
-            <h2 id="resultsTitle">Raingutter Regatta</h2>
+            <div class="results-title-row">
+              <div>
+                <p class="eyebrow">Tournament Results</p>
+                <h2 id="resultsTitle">Raingutter Regatta</h2>
+              </div>
+              <span id="resultsStatusBadge" class="results-status-badge">In Progress</span>
+            </div>
             <p id="resultsSubtitle" class="muted"></p>
+            <p id="resultsGenerated" class="results-generated muted"></p>
           </div>
 
           <div id="resultsSummary" class="results-summary"></div>
 
           <section class="results-section">
             <h3>Standings</h3>
-            <div class="table-wrap">
-              <table>
+            <div class="table-wrap results-table-wrap">
+              <table class="results-table">
                 <thead>
                   <tr><th>Place</th><th>Boat</th><th>Racer</th><th>Rank/Den</th><th>Losses</th></tr>
                 </thead>
@@ -153,7 +173,7 @@
             </div>
           </section>
 
-          <section class="results-section">
+          <section class="results-section race-log-section">
             <h3>Race Log</h3>
             <div class="table-wrap">
               <table>
@@ -165,10 +185,15 @@
             </div>
           </section>
 
+          <div class="results-help no-print">
+            <strong>Tip:</strong> Print Results opens your device's print sheet. Choose <em>Save as PDF</em> if you want a PDF copy.
+          </div>
+
           <div class="quick-actions no-print">
-            <button id="printButton" class="button primary" type="button">Print Results</button>
+            <button id="printButton" class="button primary" type="button">Print / Save PDF</button>
             <button id="shareButton" class="button secondary" type="button">Share Results</button>
-            <button id="downloadResultsButton" class="button ghost" type="button">Download Results HTML</button>
+            <button id="downloadResultsButton" class="button ghost" type="button">Download Printable HTML</button>
+            <button id="resultsNewTournamentButton" class="button danger ghost" type="button">New Tournament</button>
           </div>
         </section>
       </section>
@@ -176,6 +201,8 @@
 
     <footer class="app-footer no-print">
       <span id="offlineStatus">Ready</span>
+      <span aria-hidden="true">•</span>
+      <button id="aboutButton" class="footer-link" type="button">About v1.2.0</button>
     </footer>
   </div>
 
@@ -187,6 +214,44 @@
       <div id="installInstructions"></div>
       <button class="button primary full" value="close">Got It</button>
     </form>
+  </dialog>
+
+  <dialog id="newTournamentDialog">
+    <div class="dialog-card">
+      <h2>Start a New Tournament?</h2>
+      <p id="newTournamentWarning" class="muted">This will replace the tournament currently open on this device.</p>
+      <div class="dialog-actions stacked">
+        <button id="saveThenNewButton" class="button primary full" type="button">Save Backup & Start New</button>
+        <button id="discardThenNewButton" class="button danger ghost full" type="button">Start New Without Saving</button>
+        <button id="cancelNewTournamentButton" class="button ghost full" type="button">Cancel</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="aboutDialog">
+    <div class="dialog-card about-card">
+      <h2>Raingutter Regatta Mobile</h2>
+      <p><strong>Version 1.2.0</strong></p>
+      <p class="muted">Offline-capable double-elimination race tracker for phones, tablets, and desktop browsers.</p>
+
+      <div class="about-status-grid">
+        <div><span class="muted">Hosted app</span><strong id="aboutAppUrl">Current site</strong></div>
+        <div><span class="muted">Tournament data</span><strong>Stored on this device</strong></div>
+      </div>
+
+      <div class="qr-panel">
+        <img src="icons/app-link-qr.png" alt="QR code for the Raingutter Regatta mobile app">
+        <div>
+          <strong>Share the app</strong>
+          <p class="muted">Scan this code to open the hosted app, or use Share App Link below.</p>
+        </div>
+      </div>
+
+      <div class="dialog-actions">
+        <button id="shareAppButton" class="button secondary" type="button">Share App Link</button>
+        <button id="closeAboutButton" class="button primary" type="button">Close</button>
+      </div>
+    </div>
   </dialog>
 
   <script src="engine.js"></script>

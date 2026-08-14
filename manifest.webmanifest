@@ -1,4 +1,5 @@
 {
+  "id": "./",
   "name": "Raingutter Regatta Mobile",
   "short_name": "Regatta",
   "description": "Offline-capable double-elimination Raingutter Regatta race tracker.",
