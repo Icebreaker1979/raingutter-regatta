@@ -94,9 +94,9 @@ After loading or installing it once, the app can operate without an internet con
 
 This makes it useful in gyms, churches, schools, camps, meeting rooms, or other locations where Wi-Fi or cellular service may be unreliable.
 
-✅ Tested offline on Android
-✅ Tested offline on iPhone
-✅ Tournament autosave and resume tested offline
+- ✅ Tested offline on Android
+- ✅ Tested offline on iPhone
+- ✅ Tournament autosave and resume tested offline
 
 ---
 
